@@ -6,13 +6,15 @@ require 'byebug'
 require 'faker'
 
 get '/widget_charts' do
+  date = Faker::Date.between(Date.parse('5-12-2010'), Date.parse('8-11-2011'))
+  byebug
   modem_count = params[:modem].to_i
   type = params[:chart_type]
-  if params[:datapoint_count]
-    datapoint_count = params[:datapoint_count].to_i
-  else
-    datapoint_count = 4
-  end
+  datapoint_count = if params[:datapoint_count]
+                      params[:datapoint_count].to_i
+                    else
+                      4
+                    end
   content_type :json
   @data = {}
   @array = []
@@ -31,32 +33,32 @@ get '/widget_charts' do
       modem_names << modem.to_s
     end
     filters =
-    [
-      {
-        title: '',
-        filter_type: 'checkbox',
-        collection: [
-          value: '',
-          label: 'All'
-        ]
-      },
-      {
-        title: '',
-        filter_type: 'textbox',
-        collection: [
-          value: datapoint_count,
-          label: 'Datapoints'
-        ]
-      }
-    ]
+      [
+        {
+          title: '',
+          filter_type: 'checkbox',
+          collection: [
+            value: '',
+            label: 'All'
+          ]
+        },
+        {
+          title: '',
+          filter_type: 'textbox',
+          collection: [
+            value: datapoint_count,
+            label: 'Datapoints'
+          ]
+        }
+      ]
   end
   @charts = WidgeCharts.new(
     [
       WidgeChart.new(type,
-        modem_count,
-        modem_array,
-        modem_names,
-      filters).to_h
+                     modem_count,
+                     modem_array,
+                     modem_names,
+                     filters).to_h
     ]
   )
   @data = { data: @charts.widget }
