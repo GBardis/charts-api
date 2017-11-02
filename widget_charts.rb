@@ -8,7 +8,11 @@ require 'faker'
 get '/widget_charts' do
   modem_count = params[:modem].to_i
   type = params[:chart_type]
-  datapoint_count = params[:datapoint_count].to_i
+  if params[:datapoint_count]
+    datapoint_count = params[:datapoint_count].to_i
+  else
+    datapoint_count = 4
+  end
   content_type :json
   @data = {}
   @array = []
@@ -19,7 +23,7 @@ get '/widget_charts' do
 
   unless datapoint_count.nil?
     modem_count.times do |index|
-      modem = Faker::App.unique.name
+      modem = Faker::App.name
       modem_array << [modem.to_s]
       datapoint_count.times do
         modem_array.at(index) << rand(600)
@@ -27,32 +31,32 @@ get '/widget_charts' do
       modem_names << modem.to_s
     end
     filters =
-      [
-        {
-          title: '',
-          filter_type: 'checkbox',
-          collection: [
-            value: '',
-            label: 'All'
-          ]
-        },
-        {
-          title: '',
-          filter_type: 'textbox',
-          collection: [
-            value: datapoint_count,
-            label: 'Datapoints'
-          ]
-        }
-      ]
+    [
+      {
+        title: '',
+        filter_type: 'checkbox',
+        collection: [
+          value: '',
+          label: 'All'
+        ]
+      },
+      {
+        title: '',
+        filter_type: 'textbox',
+        collection: [
+          value: datapoint_count,
+          label: 'Datapoints'
+        ]
+      }
+    ]
   end
   @charts = WidgeCharts.new(
     [
       WidgeChart.new(type,
-                     modem_count,
-                     modem_array,
-                     modem_names,
-                     filters).to_h
+        modem_count,
+        modem_array,
+        modem_names,
+      filters).to_h
     ]
   )
   @data = { data: @charts.widget }
