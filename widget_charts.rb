@@ -6,6 +6,13 @@ require 'byebug'
 require 'faker'
 
 get '/widget_charts' do
+  converted1 = Date.strptime('8-11-2011', '%d-%m-%Y')
+  converted1.mday
+  converted2 = Date.strptime('8-11-2011', '%d-%m-%Y')
+  converted2.mday
+
+  date_range = converted1.mday - converted2.mday
+
   date = Faker::Date.between(Date.parse('5-12-2010'), Date.parse('8-11-2011'))
   byebug
   modem_count = params[:modem].to_i
