@@ -4,6 +4,7 @@ configure { set :server, :puma }
 require 'json'
 require 'byebug'
 require 'faker'
+require 'date'
 
 get '/widget_charts/v1' do
   content_type :json
@@ -38,28 +39,28 @@ get '/widget_charts/v1' do
   end
 
   filters =
-  [
-    {
-      title: 'date_filter',
-      type: 'date',
-      current_start_date: current_date,
-      current_end_date: current_date + 7,
-      available_start: available_date,
-      available_end: available_date + 30
-    },
-    {
-      title: 'modems',
-      type: 'multi-select',
-      collection: modem_names_array
-    }
-  ]
+    [
+      {
+        title: 'date_filter',
+        type: 'date',
+        current_start_date: current_date,
+        current_end_date: current_date + 7,
+        available_start: available_date,
+        available_end: available_date + 30
+      },
+      {
+        title: 'modems',
+        type: 'multi-select',
+        collection: modem_names_array
+      }
+    ]
 
   @charts = WidgeCharts.new(
     [
       WidgeChart.new(type,
-        modem_array,
-        modem_names,
-      filters).to_h
+                     modem_array,
+                     modem_names,
+                     filters).to_h
     ]
   )
   @data = { data: @charts.widget }
@@ -126,15 +127,14 @@ get '/widget_charts' do
   @charts = WidgeCharts.new(
     [
       WidgeChart.new(type,
-        modem_array,
-        modem_names,
-      filters).to_h
+                     modem_array,
+                     modem_names,
+                     filters).to_h
     ]
   )
   @data = { data: @charts.widget }
   @data.to_json
 end
-
 
 get '/widget_charts/v2' do
   content_type :json
@@ -143,9 +143,10 @@ get '/widget_charts/v2' do
   dates = []
   modem_array = []
   modem_name = []
+  sort_date = []
   WidgeCharts = Struct.new(:widget)
   WidgeChart = Struct.new(:data)
-  type = "pie"
+  type = 'pie'
 
   if params[:startDate] && params[:endDate]
     start_date = Date.parse(params[:startDate])
@@ -154,9 +155,14 @@ get '/widget_charts/v2' do
     date_range = (end_date - start_date).to_i
 
     date_range.times do
-      hash = { value: Faker::Date.between(end_date, start_date).strftime('%Y-%m-%d %H:%M') }
-      dates << hash
+      sort_date << Faker::Date.unique.between(end_date, start_date).strftime('%Y-%m-%d %H:%M')
     end
+  end
+  Faker::Date.unique.clear
+
+  sort_date.sort.each do |date|
+    hash = { value: date }
+    dates << hash
   end
 
   name = Faker::App.name
@@ -169,22 +175,23 @@ get '/widget_charts/v2' do
     5.times do
       modem_array.at(index) << rand(600)
     end
-    # modem_names << modem.to_s
   end
 
   filters = {
-    date_filter:{
+    date_filter: {
+      start_date: sort_date.sort[0],
+      end_date: sort_date.sort[sort_date.count - 1],
       title: 'date_filter',
       type: 'date',
       collection: dates
     },
-    multi_select:{
+    multi_select: {
       title: 'modems',
       type: 'multi-select',
       collection: modem_name
     }
   }
-  result  = {
+  result = {
     columns:  modem_array,
     type: type,
     name: name,
