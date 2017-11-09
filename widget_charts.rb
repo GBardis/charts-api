@@ -5,6 +5,7 @@ require 'json'
 require 'byebug'
 require 'faker'
 require 'date'
+require 'active_support/all'
 
 get '/widget_charts/v1' do
   content_type :json
@@ -39,28 +40,28 @@ get '/widget_charts/v1' do
   end
 
   filters =
-    [
-      {
-        title: 'date_filter',
-        type: 'date',
-        current_start_date: current_date,
-        current_end_date: current_date + 7,
-        available_start: available_date,
-        available_end: available_date + 30
-      },
-      {
-        title: 'modems',
-        type: 'multi-select',
-        collection: modem_names_array
-      }
-    ]
+  [
+    {
+      title: 'date_filter',
+      type: 'date',
+      current_start_date: current_date,
+      current_end_date: current_date + 7,
+      available_start: available_date,
+      available_end: available_date + 30
+    },
+    {
+      title: 'modems',
+      type: 'multi-select',
+      collection: modem_names_array
+    }
+  ]
 
   @charts = WidgeCharts.new(
     [
       WidgeChart.new(type,
-                     modem_array,
-                     modem_names,
-                     filters).to_h
+        modem_array,
+        modem_names,
+      filters).to_h
     ]
   )
   @data = { data: @charts.widget }
@@ -127,9 +128,9 @@ get '/widget_charts' do
   @charts = WidgeCharts.new(
     [
       WidgeChart.new(type,
-                     modem_array,
-                     modem_names,
-                     filters).to_h
+        modem_array,
+        modem_names,
+      filters).to_h
     ]
   )
   @data = { data: @charts.widget }
@@ -146,11 +147,33 @@ get '/widget_charts/v2' do
   sort_date = []
   WidgeCharts = Struct.new(:widget)
   WidgeChart = Struct.new(:data)
-  type = 'pie'
+  type = 'spline'
 
-  if params[:startDate] && params[:endDate]
-    start_date = Date.parse(params[:startDate])
-    end_date = Date.parse(params[:endDate])
+  multi_select_params = params.except("end_date","start_date")
+
+  if !params[multi_select_params.keys.first.to_s].nil?
+    modem_params_array= params[multi_select_params.keys.first.to_s]
+    modem_count = modem_params_array.count
+  else
+    modem_count = 0
+  end
+
+  valid_start_date = Date.parse('1-10-2015')
+  valid_end_date = Date.parse('31-10-2015')
+
+  if !params[:start_date].blank? && !params[:end_date].blank?
+    #byebug
+    start_date = Date.parse(params[:start_date])
+    end_date = Date.parse(params[:end_date])
+
+    date_range = (end_date - start_date).to_i
+
+    date_range.times do
+      sort_date << Faker::Date.unique.between(end_date, start_date).strftime('%Y-%m-%d %H:%M')
+    end
+  else
+    start_date = valid_start_date
+    end_date = valid_end_date
 
     date_range = (end_date - start_date).to_i
 
@@ -166,41 +189,55 @@ get '/widget_charts/v2' do
   end
 
   name = Faker::App.name
-
-  5.times do |index|
-    modem = Faker::App.name
-    hash = { name: modem }
-    modem_name << hash
-    modem_array << [modem.to_s]
-    5.times do
-      modem_array.at(index) << rand(600)
+  if modem_count == 0
+    5.times do |index|
+      modem = Faker::App.name
+      hash = { name: modem }
+      modem_name << hash
+      modem_array << [modem.to_s]
+      date_range.times do
+        modem_array.at(index) << rand(600)
+      end
+    end
+  else
+    modem_params_array.each_with_index do |modem, index|
+      modem_name<< modem
+      modem_array << [modem]
+      date_range.times do
+        modem_array.at(index) << rand(600)
+      end
     end
   end
 
-  filters = {
-    date_filter: {
-      start_date: sort_date.sort[0],
-      end_date: sort_date.sort[sort_date.count - 1],
-      title: 'date_filter',
-      type: 'date',
-      collection: dates
+  filters = [
+    {
+      date_filter: {
+        start_date: sort_date.sort[0],
+        end_date: sort_date.sort[sort_date.count - 1],
+        valid_start_date: valid_start_date,
+        valid_end_date:  valid_end_date,
+        title: 'date_filter',
+        type: 'date',
+      }
     },
-    multi_select: {
-      title: 'modems',
-      type: 'multi-select',
-      collection: modem_name
-    }
-  }
-  result = {
-    columns:  modem_array,
-    type: type,
-    name: name,
-    xFormat: '%Y-%m-5d %H:%M',
-    filters: filters
-  }
+    {
+      multi_select: {
+        title: 'modems',
+        type: 'multi-select',
+        collection: modem_name
+      }
+    }]
 
-  @charts = WidgeCharts.new(
-    WidgeChart.new(result).to_h
-  )
-  @charts.widget[:data].to_json
-end
+    result = {
+      columns:  modem_array,
+      type: type,
+      name: name,
+      xFormat: '%Y-%m-5d %H:%M',
+      filters: filters
+    }
+
+    @charts = WidgeCharts.new(
+      WidgeChart.new(result).to_h
+    )
+    @charts.widget[:data].to_json
+  end
