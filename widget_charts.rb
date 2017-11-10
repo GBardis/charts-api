@@ -136,7 +136,8 @@ require 'active_support/all'
 #   @data = { data: @charts.widget }
 #   @data.to_json
 # end
-
+WidgeCharts = Struct.new(:widget)
+WidgeChart = Struct.new(:data)
 get '/widget_charts/v2' do
   content_type :json
   @data = {}
@@ -145,8 +146,7 @@ get '/widget_charts/v2' do
   modem_array = []
   modem_name = []
   sort_date = []
-  WidgeCharts = Struct.new(:widget)
-  WidgeChart = Struct.new(:data)
+
   type = 'spline'
 
   multi_select_params = params.except("end_date","start_date")
@@ -211,19 +211,20 @@ get '/widget_charts/v2' do
 
   filters = [
     {
-      date_filter: {
-        start_date: sort_date.sort[0],
-        end_date: sort_date.sort[sort_date.count - 1],
-        valid_start_date: valid_start_date,
-        valid_end_date:  valid_end_date,
+      date_filter: [
+        {start_date: sort_date.sort[0], params_start_date: 'startDate'},
+        {end_date: sort_date.sort[sort_date.count - 1], params_end_date: 'endDate'},
+        {valid_start_date: valid_start_date, params_valid_start_date: 'valid_start_date'},
+        {valid_end_date:  valid_end_date, params_valid_end_date: "valid_end_date"},
         title: 'date_filter',
         type: 'date',
-      }
+      ]
     },
     {
       multi_select: {
         title: 'modems',
         type: 'multi-select',
+        available_collection: modem_name,
         collection: modem_name
       }
     }]
