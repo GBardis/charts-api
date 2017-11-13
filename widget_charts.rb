@@ -191,7 +191,7 @@ get '/widget_charts/v2' do
   if modem_count.zero?
     5.times do |index|
       modem = Faker::App.name
-      id = (100..999).to_a.shuffle
+      id = (1..5).to_a.shuffle
       new_id = id.pop
       hash = { id: new_id, name: modem }
       modem_name << hash
