@@ -186,12 +186,12 @@ get '/widget_charts/v2' do
     hash = { value: date }
     dates << hash
   end
+  id = (1..5).to_a.shuffle
 
   name = Faker::App.name
   if modem_count.zero?
     5.times do |index|
       modem = Faker::App.name
-      id = (1..5).to_a.shuffle
       new_id = id.pop
       hash = { id: new_id, name: modem }
       modem_name << hash
@@ -202,7 +202,8 @@ get '/widget_charts/v2' do
     end
   else
     modem_params_array.each_with_index do |modem, index|
-      modem_name << { name: modem }
+      new_id = id.pop
+      modem_name << { id: new_id, name: modem }
       modem_array << [modem]
       date_range.times do
         modem_array.at(index) << rand(600)
