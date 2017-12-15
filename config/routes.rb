@@ -4,5 +4,7 @@ Rails.application.routes.draw do
   post '/widget_charts/v3', to: 'application#v3'
   post '/widget_charts/v4', to: 'application#v4'
   post '/widget_charts/v5', to: 'application#v5'
-  post '/widget_charts/v6', to: 'application#v6'
+  post '/widget_charts/timeseries', to: 'application#timeseries'
+  post '/widget_charts/bar', to: 'application#bar'
+  post '/widget_charts/pie', to: 'application#pie'
 end
